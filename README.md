@@ -1,6 +1,6 @@
 # AppRTC - iOS implementation of the Google WebRTC Demo
 
-## NOTE: This fork is STRICTLY a client for https://github.com/mslosarz/nextrtc-videochat-with-rest
+## NOTE: This fork is STRICTLY adapted for [NextRTC Signaling Server](https://github.com/mslosarz/nextrtc-videochat-with-rest)
 
 ## About
 This Xcode project is a native wrapper for the Google's WebRTC Demo. It organizes the WebRTC components into a cocoa pod that can be easily deployed into any Xcode project. The precompiled libWebRTC static library bundled with the pod works with 64-bit apps, unlike prior versions of WebRTC projects where only the 32-bit version was available. Currently, the project is designed to run on iOS Devices (iOS Simulator is not supported).
