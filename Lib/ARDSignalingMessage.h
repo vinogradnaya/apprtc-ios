@@ -32,9 +32,15 @@
 
 typedef enum {
   kARDSignalingMessageTypeCandidate,
-  kARDSignalingMessageTypeOffer,
-  kARDSignalingMessageTypeAnswer,
-  kARDSignalingMessageTypeBye,
+  kARDSignalingMessageTypePeerLeft,
+  kARDSignalingMessageTypePing,
+  kARDSignalingMessageTypeCreated,
+  kARDSignalingMessageTypeJoined,
+  kARDSignalingMessageTypeOfferRequest,
+  kARDSignalingMessageTypeOfferResponse,
+  kARDSignalingMessageTypeAnswerRequest,
+  kARDSignalingMessageTypeAnswerResponse,
+  kARDSignalingMessageTypeFinalize
 } ARDSignalingMessageType;
 
 @interface ARDSignalingMessage : NSObject
@@ -49,18 +55,72 @@ typedef enum {
 @interface ARDICECandidateMessage : ARDSignalingMessage
 
 @property(nonatomic, readonly) RTCICECandidate *candidate;
+@property(nonatomic, readonly) NSString *peer;
 
-- (instancetype)initWithCandidate:(RTCICECandidate *)candidate;
-
-@end
-
-@interface ARDSessionDescriptionMessage : ARDSignalingMessage
-
-@property(nonatomic, readonly) RTCSessionDescription *sessionDescription;
-
-- (instancetype)initWithDescription:(RTCSessionDescription *)description;
+- (instancetype)initWithCandidate:(RTCICECandidate *)candidate peer:(NSString *)peerID;
 
 @end
+
+//@interface ARDSessionDescriptionMessage : ARDSignalingMessage
+//
+//@property(nonatomic, readonly) RTCSessionDescription *sessionDescription;
+//
+//- (instancetype)initWithDescription:(RTCSessionDescription *)description;
+//
+//@end
 
 @interface ARDByeMessage : ARDSignalingMessage
+@property (nonatomic, readonly) NSString *peer;
+- (instancetype)initWithPeer:(NSString *)peerID;
 @end
+
+@interface ARDPingMessage : ARDSignalingMessage
+@end
+
+@interface ARDCreatedMessage : ARDSignalingMessage
+@end
+
+@interface ARDJoinedMessage : ARDSignalingMessage
+@end
+
+@interface ARDOfferRequestMessage : ARDSignalingMessage
+@property(nonatomic, readonly) NSString *from;
+@property(nonatomic, readonly) NSString *to;
+- (instancetype)initWithDictionary:(NSDictionary *)dictionary;
+@end
+
+@interface ARDOfferResponseMessage : ARDSignalingMessage
+@property(nonatomic, readonly) RTCSessionDescription *sessionDescription;
+@property(nonatomic, readonly) NSString *to;
+- (instancetype)initWithTo:(NSString *)to
+                 description:(RTCSessionDescription *)description;
+@end
+
+@interface ARDFinalizeMessage : ARDSignalingMessage
+@property(nonatomic, readonly) RTCSessionDescription *sessionDescription;
+@property(nonatomic, readonly) NSString *from;
+- (instancetype)initWithFrom:(NSString *)from
+                 description:(RTCSessionDescription *)description;
+@end
+
+@interface ARDAnswerRequestMessage : ARDSignalingMessage
+@property(nonatomic, readonly) RTCSessionDescription *sessionDescription;
+@property(nonatomic, readonly) NSString *from;
+@property(nonatomic, readonly) NSString *to;
+- (instancetype)initWithFrom:(NSString *)from
+                          to:(NSString *)to
+                 description:(RTCSessionDescription *)description;
+@end
+
+@interface ARDAnswerResponseMessage : ARDSignalingMessage
+@property(nonatomic, readonly) RTCSessionDescription *sessionDescription;
+@property(nonatomic, readonly) NSString *to;
+- (instancetype)initWithTo:(NSString *)to
+                 description:(RTCSessionDescription *)description;
+@end
+
+
+
+
+
+

@@ -16,15 +16,17 @@
 
 @property (strong, nonatomic) IBOutlet UITextField *textField;
 @property (strong, nonatomic) IBOutlet UIView *textFieldBorderView;
-@property (strong, nonatomic) IBOutlet UIButton *joinButton;
+@property (strong, nonatomic) IBOutlet UIButton *createButton;
+@property (weak, nonatomic) IBOutlet UIButton *joinButton;
 @property (strong, nonatomic) IBOutlet UILabel *errorLabel;
 @property (strong, nonatomic) IBOutlet NSLayoutConstraint *errorLabelHeightConstraint; //used for animating
 
-- (IBAction)touchButtonPressed:(id)sender;
+- (IBAction)createButtonPressed:(id)sender;
 
 @end
 
 @protocol ARTCRoomTextInputViewCellDelegate<NSObject>
 @optional
+- (void)roomTextInputViewCell:(ARTCRoomTextInputViewCell *)cell shouldCreateRoom:(NSString *)room;
 - (void)roomTextInputViewCell:(ARTCRoomTextInputViewCell *)cell shouldJoinRoom:(NSString *)room;
 @end

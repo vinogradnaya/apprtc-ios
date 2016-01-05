@@ -26,40 +26,43 @@
  */
 
 #import "RTCICECandidate+JSON.h"
+#import "ARDUtilities.h"
 
-static NSString const *kRTCICECandidateTypeKey = @"type";
+static NSString const *kRTCICECandidateTypeKey = @"signal";
 static NSString const *kRTCICECandidateTypeValue = @"candidate";
-static NSString const *kRTCICECandidateMidKey = @"id";
-static NSString const *kRTCICECandidateMLineIndexKey = @"label";
+static NSString const *kRTCICECandidateMidKey = @"sdpMid";
+static NSString const *kRTCICECandidateMLineIndexKey = @"sdpMLineIndex";
 static NSString const *kRTCICECandidateSdpKey = @"candidate";
+
 
 @implementation RTCICECandidate (JSON)
 
 + (RTCICECandidate *)candidateFromJSONDictionary:(NSDictionary *)dictionary {
-  NSString *mid = dictionary[kRTCICECandidateMidKey];
-  NSString *sdp = dictionary[kRTCICECandidateSdpKey];
-  NSNumber *num = dictionary[kRTCICECandidateMLineIndexKey];
+    NSLog(@"%s", __PRETTY_FUNCTION__);
+    NSLog(@"%@", dictionary);
+  NSString *mid = dictionary[@"sdpMid"];
+  NSString *sdp = dictionary[@"candidate"];
+  NSNumber *num = dictionary[@"sdpMLineIndex"];
   NSInteger mLineIndex = [num integerValue];
   return [[RTCICECandidate alloc] initWithMid:mid index:mLineIndex sdp:sdp];
 }
 
-- (NSData *)JSONData {
-  NSDictionary *json = @{
-    kRTCICECandidateTypeKey : kRTCICECandidateTypeValue,
-    kRTCICECandidateMLineIndexKey : @(self.sdpMLineIndex),
-    kRTCICECandidateMidKey : self.sdpMid,
-    kRTCICECandidateSdpKey : self.sdp
-  };
-  NSError *error = nil;
-  NSData *data =
-      [NSJSONSerialization dataWithJSONObject:json
-                                      options:NSJSONWritingPrettyPrinted
-                                        error:&error];
-  if (error) {
-    NSLog(@"Error serializing JSON: %@", error);
-    return nil;
-  }
-  return data;
++ (RTCICECandidate *)candidateFromJSONString:(NSString *)JSONString {
+    NSLog(@"%s", __PRETTY_FUNCTION__);
+    NSLog(@"%@", JSONString);
+    NSString *processedString = [JSONString stringByReplacingOccurrencesOfString:@"\'" withString:@"\""];
+    NSDictionary *json = [NSDictionary dictionaryWithJSONString:processedString];
+    return [self candidateFromJSONDictionary:json];
 }
+
+- (NSDictionary *)JSONDictionary {
+    NSDictionary *json = @{
+                           @"sdpMLineIndex" : @(self.sdpMLineIndex),
+                           @"sdpMid" :self.sdpMid,
+                           @"candidate" : self.sdp
+                           };
+    return json;
+}
+
 
 @end

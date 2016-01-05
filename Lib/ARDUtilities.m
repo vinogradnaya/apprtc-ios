@@ -30,7 +30,9 @@
 @implementation NSDictionary (ARDUtilites)
 
 + (NSDictionary *)dictionaryWithJSONString:(NSString *)jsonString {
-  NSParameterAssert(jsonString.length > 0);
+    if (jsonString.length == 0) {
+        return nil;
+    }
   NSData *data = [jsonString dataUsingEncoding:NSUTF8StringEncoding];
   NSError *error = nil;
   NSDictionary *dict =

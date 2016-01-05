@@ -9,8 +9,6 @@
 #import "ARTCVideoChatViewController.h"
 #import <AVFoundation/AVFoundation.h>
 
-#define SERVER_HOST_URL @"https://apprtc.appspot.com"
-
 @implementation ARTCVideoChatViewController
 
 - (void)viewDidLoad {
@@ -61,11 +59,11 @@
     
     //Connect to the room
     [self disconnect];
+
     self.client = [[ARDAppClient alloc] initWithDelegate:self];
-    [self.client setServerHostUrl:SERVER_HOST_URL];
-    [self.client connectToRoomWithId:self.roomName options:nil];
+    [self.client connectToRoomWithId:@"noga" isInitiator:self.isInitiator];
     
-    [self.urlLabel setText:self.roomUrl];
+//    [self.urlLabel setText:self.roomUrl];
 }
 
 - (void)viewWillDisappear:(BOOL)animated {
@@ -93,7 +91,7 @@
 
 - (void)setRoomName:(NSString *)roomName {
     _roomName = roomName;
-    self.roomUrl = [NSString stringWithFormat:@"%@/r/%@", SERVER_HOST_URL, roomName];
+//    self.roomUrl = [NSString stringWithFormat:@"%@/r/%@", SERVER_HOST_URL, roomName];
 }
 
 - (void)disconnect {
@@ -184,6 +182,8 @@
         case kARDAppClientStateDisconnected:
             NSLog(@"Client disconnected.");
             [self remoteDisconnected];
+            break;
+        default:
             break;
     }
 }

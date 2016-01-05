@@ -9,12 +9,15 @@
 #import "ARTCRoomViewController.h"
 #import "ARTCVideoChatViewController.h"
 
+@interface ARTCRoomViewController ()
+@property (nonatomic, assign) BOOL isInitiator;
+@end
 
 @implementation ARTCRoomViewController
 
 - (void)viewDidLoad {
+    self.isInitiator = NO;
     [super viewDidLoad];
-    
 }
 
 - (void)viewWillAppear:(BOOL)animated {
@@ -54,12 +57,19 @@
 
 - (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
     ARTCVideoChatViewController *viewController = (ARTCVideoChatViewController *)[segue destinationViewController];
+    viewController.isInitiator = self.isInitiator;
     [viewController setRoomName:sender];
 }
 
 #pragma mark - ARTCRoomTextInputViewCellDelegate Methods
 
+- (void)roomTextInputViewCell:(ARTCRoomTextInputViewCell *)cell shouldCreateRoom:(NSString *)room {
+    self.isInitiator = YES;
+    [self performSegueWithIdentifier:@"ARTCVideoChatViewController" sender:room];
+}
+
 - (void)roomTextInputViewCell:(ARTCRoomTextInputViewCell *)cell shouldJoinRoom:(NSString *)room {
+    self.isInitiator = NO;
     [self performSegueWithIdentifier:@"ARTCVideoChatViewController" sender:room];
 }
 

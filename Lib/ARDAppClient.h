@@ -36,6 +36,8 @@ typedef NS_ENUM(NSInteger, ARDAppClientState) {
   kARDAppClientStateConnecting,
   // Connected to servers.
   kARDAppClientStateConnected,
+  //Failed to connect to servers
+  kARDAppClientStateFailedToConnect
 };
 
 @class ARDAppClient;
@@ -60,7 +62,6 @@ typedef NS_ENUM(NSInteger, ARDAppClientState) {
 
 @property(nonatomic, readonly) ARDAppClientState state;
 @property(nonatomic, weak) id<ARDAppClientDelegate> delegate;
-@property(nonatomic, strong) NSString *serverHostUrl;
 
 - (instancetype)initWithDelegate:(id<ARDAppClientDelegate>)delegate;
 
@@ -68,8 +69,7 @@ typedef NS_ENUM(NSInteger, ARDAppClientState) {
 // TODO(tkchin): provide available keys/values for options. This will be used
 // for call configurations such as overriding server choice, specifying codecs
 // and so on.
-- (void)connectToRoomWithId:(NSString *)roomId
-                    options:(NSDictionary *)options;
+- (void)connectToRoomWithId:(NSString *)roomId isInitiator:(BOOL)isInitiator;
 
 // Mute and unmute Audio-In
 - (void)muteAudioIn;
@@ -90,4 +90,6 @@ typedef NS_ENUM(NSInteger, ARDAppClientState) {
 // Disconnects from the AppRTC servers and any connected clients.
 - (void)disconnect;
 
+//Send Data
+- (void)sendData;
 @end

@@ -30,6 +30,6 @@
 @interface RTCICECandidate (JSON)
 
 + (RTCICECandidate *)candidateFromJSONDictionary:(NSDictionary *)dictionary;
-- (NSData *)JSONData;
-
++ (RTCICECandidate *)candidateFromJSONString:(NSString *)JSONString;
+- (NSDictionary *)JSONDictionary;
 @end

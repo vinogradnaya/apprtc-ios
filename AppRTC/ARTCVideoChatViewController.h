@@ -42,6 +42,7 @@
 @property (assign, nonatomic) CGSize localVideoSize;
 @property (assign, nonatomic) CGSize remoteVideoSize;
 @property (assign, nonatomic) BOOL isZoom; //used for double tap remote view
+@property (assign, nonatomic) BOOL isInitiator;
 
 //togle button parameter
 @property (assign, nonatomic) BOOL isAudioMute;

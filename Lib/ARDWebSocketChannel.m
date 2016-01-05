@@ -32,28 +32,25 @@
 
 // TODO(tkchin): move these to a configuration object.
 static NSString const *kARDWSSMessageErrorKey = @"error";
-static NSString const *kARDWSSMessagePayloadKey = @"msg";
+static NSString const *kARDWSSMessagePayloadKey = @"signal";
 
 @interface ARDWebSocketChannel () <SRWebSocketDelegate>
 @end
 
 @implementation ARDWebSocketChannel {
   NSURL *_url;
-  NSURL *_restURL;
   SRWebSocket *_socket;
 }
 
 @synthesize delegate = _delegate;
 @synthesize state = _state;
-@synthesize roomId = _roomId;
-@synthesize clientId = _clientId;
 
 - (instancetype)initWithURL:(NSURL *)url
-                    restURL:(NSURL *)restURL
                    delegate:(id<ARDWebSocketChannelDelegate>)delegate {
   if (self = [super init]) {
+    _isInitiator = NO;
+    _state = kARDWebSocketChannelStateClosed;
     _url = url;
-    _restURL = restURL;
     _delegate = delegate;
     _socket = [[SRWebSocket alloc] initWithURL:url];
     _socket.delegate = self;
@@ -75,48 +72,37 @@ static NSString const *kARDWSSMessagePayloadKey = @"msg";
   [_delegate channel:self didChangeState:_state];
 }
 
-- (void)registerForRoomId:(NSString *)roomId
-                 clientId:(NSString *)clientId {
+#pragma mark - Public
+
+- (void)registerForRoomId:(NSString *)roomId initiate:(BOOL)initiate {
   NSParameterAssert(roomId.length);
-  NSParameterAssert(clientId.length);
-  _roomId = roomId;
-  _clientId = clientId;
-  if (_state == kARDWebSocketChannelStateOpen) {
-    [self registerWithCollider];
-  }
+  NSParameterAssert(_state == kARDWebSocketChannelStateOpen);
+
+    NSLog(@"%s", __PRETTY_FUNCTION__);
+    NSLog(@"Registering on WSS for rid:%@", roomId);
+
+    NSDictionary *registerMessage = @{
+                                      @"signal": initiate? @"create" : @"join",
+                                      @"content" : roomId,
+                                      @"to" : [NSNull null]
+                                      };
+    NSData *message =
+    [NSJSONSerialization dataWithJSONObject:registerMessage
+                                    options:NSJSONWritingPrettyPrinted
+                                      error:nil];
+    [self sendData:message];
 }
 
 - (void)sendData:(NSData *)data {
-  NSParameterAssert(_clientId.length);
-  NSParameterAssert(_roomId.length);
-  if (_state == kARDWebSocketChannelStateRegistered) {
-    NSString *payload =
-        [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
-    NSDictionary *message = @{
-      @"cmd": @"send",
-      @"msg": payload,
-    };
-    NSData *messageJSONObject =
-        [NSJSONSerialization dataWithJSONObject:message
-                                        options:NSJSONWritingPrettyPrinted
-                                          error:nil];
-    NSString *messageString =
-        [[NSString alloc] initWithData:messageJSONObject
+    NSLog(@"%s", __PRETTY_FUNCTION__);
+    if (_socket.readyState == SR_OPEN) {
+        NSString *messageString =
+        [[NSString alloc] initWithData:data
                               encoding:NSUTF8StringEncoding];
-    NSLog(@"C->WSS: %@", messageString);
-    [_socket send:messageString];
-  } else {
-    NSString *dataString =
-        [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
-    NSLog(@"C->WSS POST: %@", dataString);
-    NSString *urlString =
-        [NSString stringWithFormat:@"%@/%@/%@",
-            [_restURL absoluteString], _roomId, _clientId];
-    NSURL *url = [NSURL URLWithString:urlString];
-    [NSURLConnection sendAsyncPostToURL:url
-                               withData:data
-                      completionHandler:nil];
-  }
+
+        NSLog(@"C->WSS: %@", messageString);
+        [_socket send:messageString];
+    }
 }
 
 - (void)disconnect {
@@ -124,29 +110,19 @@ static NSString const *kARDWSSMessagePayloadKey = @"msg";
       _state == kARDWebSocketChannelStateError) {
     return;
   }
+    NSLog(@"C->WSS DELETE rid:%@", _roomId);
   [_socket close];
-  NSLog(@"C->WSS DELETE rid:%@ cid:%@", _roomId, _clientId);
-  NSString *urlString =
-      [NSString stringWithFormat:@"%@/%@/%@",
-          [_restURL absoluteString], _roomId, _clientId];
-  NSURL *url = [NSURL URLWithString:urlString];
-  NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
-  request.HTTPMethod = @"DELETE";
-  request.HTTPBody = nil;
-  [NSURLConnection sendAsyncRequest:request completionHandler:nil];
 }
 
 #pragma mark - SRWebSocketDelegate
 
 - (void)webSocketDidOpen:(SRWebSocket *)webSocket {
+    NSLog(@"%s", __PRETTY_FUNCTION__);
   NSLog(@"WebSocket connection opened.");
-  self.state = kARDWebSocketChannelStateOpen;
-  if (_roomId.length && _clientId.length) {
-    [self registerWithCollider];
-  }
 }
 
 - (void)webSocket:(SRWebSocket *)webSocket didReceiveMessage:(id)message {
+    NSLog(@"%s", __PRETTY_FUNCTION__);
   NSString *messageString = message;
   NSData *messageData = [messageString dataUsingEncoding:NSUTF8StringEncoding];
   id jsonObject = [NSJSONSerialization JSONObjectWithData:messageData
@@ -162,10 +138,19 @@ static NSString const *kARDWSSMessagePayloadKey = @"msg";
     NSLog(@"WSS error: %@", errorString);
     return;
   }
-  NSString *payload = wssMessage[kARDWSSMessagePayloadKey];
+
+  NSLog(@"WSS->C: %@", message);
+
   ARDSignalingMessage *signalingMessage =
-      [ARDSignalingMessage messageFromJSONString:payload];
-  NSLog(@"WSS->C: %@", payload);
+      [ARDSignalingMessage messageFromJSONString:message];
+    if (signalingMessage.type == kARDSignalingMessageTypeCreated ||
+        signalingMessage.type == kARDSignalingMessageTypeJoined) {
+        self.state = kARDWebSocketChannelStateRegistered;
+    }
+    if (signalingMessage.type == kARDSignalingMessageTypePing &&
+        self.state == kARDWebSocketChannelStateClosed) {
+        self.state = kARDWebSocketChannelStateOpen;
+    }
   [_delegate channel:self didReceiveMessage:signalingMessage];
 }
 
@@ -182,32 +167,6 @@ static NSString const *kARDWSSMessagePayloadKey = @"msg";
       (long)code, reason, wasClean);
   NSParameterAssert(_state != kARDWebSocketChannelStateError);
   self.state = kARDWebSocketChannelStateClosed;
-}
-
-#pragma mark - Private
-
-- (void)registerWithCollider {
-  if (_state == kARDWebSocketChannelStateRegistered) {
-    return;
-  }
-  NSParameterAssert(_roomId.length);
-  NSParameterAssert(_clientId.length);
-  NSDictionary *registerMessage = @{
-    @"cmd": @"register",
-    @"roomid" : _roomId,
-    @"clientid" : _clientId,
-  };
-  NSData *message =
-      [NSJSONSerialization dataWithJSONObject:registerMessage
-                                      options:NSJSONWritingPrettyPrinted
-                                        error:nil];
-  NSString *messageString =
-      [[NSString alloc] initWithData:message encoding:NSUTF8StringEncoding];
-  NSLog(@"Registering on WSS for rid:%@ cid:%@", _roomId, _clientId);
-  // Registration can fail if server rejects it. For example, if the room is
-  // full.
-  [_socket send:messageString];
-  self.state = kARDWebSocketChannelStateRegistered;
 }
 
 @end
